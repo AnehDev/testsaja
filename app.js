@@ -1,29 +1,22 @@
-const express = require('express');
-const youtubedl = require('youtube-dl-exec');
+const { execFile } = require('child_process');
+const path = require('path');
 
-const app = express();
+// Specify the path to the yt-dlp binary
+const ytDlpPath = path.join(__dirname, '../bin/yt-dlp'); // Adjust the path as needed
 
-app.get('/get-url', (req, res) => {
-    const videoUrl = req.query.url;
+// Specify the video URL
+const videoUrl = 'https://www.dailymotion.com/video/xpihve';
 
-    if (!videoUrl) {
-        return res.status(400).send('No video URL provided');
+// Use yt-dlp to fetch the media URL
+execFile(ytDlpPath, ['-g', videoUrl], (error, stdout, stderr) => {
+    if (error) {
+        console.error(`Error: ${error.message}`);
+        return;
     }
-
-    // Use youtube-dl-exec to get the media URL
-    youtubedl(videoUrl, {
-        getUrl: true
-    }).then(output => {
-        res.send({ mediaUrl: output });
-    }).catch(err => {
-        res.status(500).send(`Error: ${err.message}`);
-    });
+    if (stderr) {
+        console.error(`Stderr: ${stderr}`);
+        return;
+    }
+    // stdout will contain the direct URL of the media file
+    console.log(`Media URL: ${stdout}`);
 });
-
-// Start the server (for local testing)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
-module.exports = app; // Export for Vercel serverless function
