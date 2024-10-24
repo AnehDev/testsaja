@@ -1,4 +1,4 @@
-// Import the youtube-dl-exec package
+// Import the required package
 const youtubedl = require('youtube-dl-exec');
 
 // Create a handler for the serverless function
@@ -10,19 +10,24 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Execute youtube-dl to get the media URL
+        // Use youtube-dl-exec to fetch the media URL
         const output = await youtubedl(videoUrl, {
-            dumpSingleJson: true, // Get the JSON output
-            noWarnings: true, // Suppress warnings
+            dumpSingleJson: true,
+            noWarnings: true,
+            // Add verbosity for debugging
+            verbose: true,
         });
 
-        // Extract the media URL
-        const mediaUrl = output.url;
+        // Check if the output contains a valid media URL
+        if (!output || !output.url) {
+            throw new Error('No media URL found in output.');
+        }
 
         // Send the media URL back in the response
-        res.json({ mediaUrl });
+        res.json({ mediaUrl: output.url });
     } catch (error) {
         console.error(`Error: ${error.message}`);
-        res.status(500).json({ error: 'Failed to fetch media URL' });
+        console.error(error); // Log the full error for debugging
+        res.status(500).json({ error: 'Failed to fetch media URL', details: error.message });
     }
 };
