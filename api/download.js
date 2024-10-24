@@ -1,33 +1,22 @@
-// Import the required package
-const youtubedl = require('youtube-dl-exec');
+const { execFile } = require('child_process');
+const path = require('path');
 
-// Create a handler for the serverless function
-module.exports = async (req, res) => {
-    const videoUrl = req.query.url; // Get the video URL from the query string
+// Specify the path to the yt-dlp binary
+const ytDlpPath = path.join(__dirname, '../bin/yt-dlp'); // Adjust the path as needed
 
-    if (!videoUrl) {
-        return res.status(400).json({ error: 'Missing video URL' });
-    }
+// Specify the video URL
+const videoUrl = 'https://www.dailymotion.com/video/xpihve';
 
-    try {
-        // Use youtube-dl-exec to fetch the media URL
-        const output = await youtubedl(videoUrl, {
-            dumpSingleJson: true,
-            noWarnings: true,
-            // Add verbosity for debugging
-            verbose: true,
-        });
-
-        // Check if the output contains a valid media URL
-        if (!output || !output.url) {
-            throw new Error('No media URL found in output.');
-        }
-
-        // Send the media URL back in the response
-        res.json({ mediaUrl: output.url });
-    } catch (error) {
+// Use yt-dlp to fetch the media URL
+execFile(ytDlpPath, ['-g', videoUrl], (error, stdout, stderr) => {
+    if (error) {
         console.error(`Error: ${error.message}`);
-        console.error(error); // Log the full error for debugging
-        res.status(500).json({ error: 'Failed to fetch media URL', details: error.message });
+        return;
     }
-};
+    if (stderr) {
+        console.error(`Stderr: ${stderr}`);
+        return;
+    }
+    // stdout will contain the direct URL of the media file
+    console.log(`Media URL: ${stdout}`);
+});
